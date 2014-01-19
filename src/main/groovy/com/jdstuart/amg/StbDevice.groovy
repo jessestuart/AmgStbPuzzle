@@ -1,6 +1,6 @@
 package com.jdstuart.amg
 
-class StbDevice
+class StbDevice implements Comparable<StbDevice>
 {
    String id
    
@@ -8,9 +8,10 @@ class StbDevice
    { 
       this.id = id
    }
-
-   def getViewsForTimeRange(List<StbDataPoint> points, Date start, Date end)
+   
+   @Override
+   public int compareTo(StbDevice o)
    {
-        
+      return this.id.compareTo(o.id);
    }
 }

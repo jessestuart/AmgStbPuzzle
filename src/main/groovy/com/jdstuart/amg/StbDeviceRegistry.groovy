@@ -12,5 +12,9 @@ class StbDeviceRegistry
       }
       return registry[id]
    }
-
+   
+   static List<StbDevice> getDeviceList()
+   {
+      return this.registry.values().sort()
+   }
 }

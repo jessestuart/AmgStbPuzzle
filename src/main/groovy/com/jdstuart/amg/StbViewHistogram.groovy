@@ -48,20 +48,25 @@ class StbViewHistogram
       return sorted
    }
    
-   List<StbNetwork> getTopFiveNetworks()
+   List<StbNetwork> getTopNNetworks(int n)
    {
-      List<StbNetwork> topFive = []
+      List<StbNetwork> topN = []
       
       def sorted = this.sortedByCount()
       int count = 0
       sorted.each { network, viewCount ->
-         if (count < 5)
+         if (count < n)
          {
-            topFive << network
+            topN << network
             count++
          }
       }
-      return topFive
+      return topN
+   }
+   
+   List<StbNetwork> getTopFiveNetworks()
+   {
+      return this.getTopNNetworks(5)
    }
 }
 

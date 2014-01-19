@@ -20,7 +20,7 @@ class StbDataPoint implements Comparable<StbDataPoint>
    
    public String toString()
    {
-      return "network : $network date : $date"
+      return "Network : $network Date : $date"
    }
    
 }

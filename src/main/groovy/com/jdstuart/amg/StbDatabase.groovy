@@ -8,7 +8,8 @@ import java.text.SimpleDateFormat
  * Currently implemented using a simple hash table mapping a
  * {@link StbDevice} to its corresponding sorted list of
  * {@link StbDataPoint}s, but could be re-written to use an ORM 
- * framework such as hibernate for scalability purposes.
+ * framework such as Hibernate for scalability purposes.
+ * 
  * @author jdstuart
  *
  */
@@ -17,11 +18,12 @@ class StbDatabase
    Map<StbDevice, List<StbDataPoint>> db = [:]
    
    /**
-    * Copies the data from the csv file into a hash table "database."
+    * Copies the data from the csv file into a hash table database.
     * @param stbData
     */
    StbDatabase(File stbData)
    {
+      println 'Initializing database.'
       // Read file line by line, dropping the header on the first line
       stbData.text.readLines().drop(1).each { line ->
          // Get raw strings from row, then convert into wrapper POJO's for type safety
@@ -44,6 +46,11 @@ class StbDatabase
       db.each { device, pointList ->
          pointList.sort()
       }
+   }
+   
+   def getDataPointsForDevice(StbDevice device)
+   {
+      return db[device]
    }
    
    def getDb()

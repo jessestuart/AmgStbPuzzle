@@ -20,7 +20,7 @@ class StbOptimizer
     * 
     * @param stbData CSV file passed in via command line.
     */
-   def void initializeDatabase(File stbData)
+   void initializeDatabase(File stbData)
    {
       this.db = new StbDatabase(stbData)
    }
@@ -33,14 +33,14 @@ class StbOptimizer
     * 
     * @return A StbViewHistogram 
     */
-   def StbViewHistogram generateHistogramForTimeRange(Date start, Date end)
+   StbViewHistogram generateHistogramForTimeRange(Date start, Date end)
    {
       StbViewHistogram histogram = new StbViewHistogram()
       
-      // For each device in the database, get a unique list of networks viewed
-      // within time range  
-      db.getDb().each { device, points ->
+      // For each device in the database, get a unique list of networks viewed within time range
+      StbDeviceRegistry.getDeviceList().each { device ->
          println "Processing device : ${device.id}"
+         List<StbDataPoint> points = db.getDataPointsForDevice(device)
          def networksViewedForDevice = getNetworksViewedForTimeRange(points, start, end)
          // Increment the histogram for each of the networks viewed
          histogram.incrementNetworkCounts(networksViewedForDevice)
@@ -66,7 +66,7 @@ class StbOptimizer
     * @param points
     * @return
     */
-   def getNetworksViewedForTimeRange(List<StbDataPoint> points, Date start, Date end)
+   List<StbNetwork> getNetworksViewedForTimeRange(List<StbDataPoint> points, Date start, Date end)
    {
       final int secondsInFiveMinutes = 300
       final int secondsInFiveHours = 18000
@@ -80,13 +80,14 @@ class StbOptimizer
          Date tuneOut = points[i+1]?.date ?: end
          
          // Check if set was turned off
-         if ((tuneOut.getTime() - tuneIn.getTime()) / 1e3 > 18000) return;
+         if (((tuneOut.getTime() - tuneIn.getTime()) / 1e3) > secondsInFiveHours) return;
          // Check if period tunes out before start, or tunes in after end (==> data not relevant)
          if (tuneOut.before(start) || tuneIn.after(end)) return;
          
          // Otherwise calculate the number of seconds viewed within specified range
          else
          {
+            println "Viewing $tuneIn to $tuneOut partially in range."
             // At least part of the viewing is within the range. Calculate how much.
             if (tuneIn.before(start))
             {
@@ -99,7 +100,6 @@ class StbOptimizer
                // Likewise if a user tunes out after the end time.
                tuneOut = end
             }
-            println "Viewing $tuneIn to $tuneOut partially in range."
             println "Tune in: ${tuneIn.getTime()}, Tune out: ${tuneOut.getTime()}\t\tNetwork : ${points[i].network}"
             int secondsViewedInRange = (tuneOut.getTime() - tuneIn.getTime()) / 1e3
             println "Minutes elapsed: ${secondsViewedInRange / 60}"
@@ -116,6 +116,8 @@ class StbOptimizer
    
    static void main(String[] args)
    {
+      def _ticks = System.nanoTime()
+      
       println "Beginning processing."
       String path = args[0]
       File stbData = new File(args[0])
@@ -135,6 +137,8 @@ class StbOptimizer
       StbViewHistogram histogram = optimizer.generateHistogramForTimeRange(start, end)
       List top5 = histogram.getTopFiveNetworks()
       
+      println "Time elapsed : ${(System.nanoTime() - _ticks) / 1e6}"
+      
       // Output to csv file. Arbitrarily using current directory for this.
       String currentDir = System.getProperty('user.dir')
       File output = new File(currentDir, 'top_networks.csv')
@@ -142,7 +146,6 @@ class StbOptimizer
       top5.each { network ->
          outputString.append("${network.name},${histogram.getCountForNetwork(network)}\n")
       }
-      println outputString
       output.write(outputString.toString())
    }
 }
