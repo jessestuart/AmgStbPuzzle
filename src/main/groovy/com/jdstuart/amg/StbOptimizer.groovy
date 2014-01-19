@@ -4,26 +4,50 @@ import java.text.SimpleDateFormat
 import java.util.Date;
 import java.util.List;
 
+/**
+ * Main entry point for processing.
+ * 
+ * @author jdstuart
+ *
+ */
 class StbOptimizer
 {
    StbDatabase db
    
-   def initializeDatabase(File stbData)
+   /**
+    * Initializes a {@link StbDatabase}} with data from a
+    * comma-separated values file.
+    * 
+    * @param stbData CSV file passed in via command line.
+    */
+   def void initializeDatabase(File stbData)
    {
       this.db = new StbDatabase(stbData)
    }
    
-   def optimizeForTimeRange(Date start, Date end)
+   /**
+    * Given a start and end time, calculates the number of verified
+    * "views" (>= 5 min viewing time) per network within the given 
+    * time range, by iterating through the {@link StbDatabase} and
+    * calculating the number of unique views per device. 
+    * 
+    * @return A StbViewHistogram 
+    */
+   def StbViewHistogram generateHistogramForTimeRange(Date start, Date end)
    {
       StbViewHistogram histogram = new StbViewHistogram()
       
+      // For each device in the database, get a unique list of networks viewed
+      // within time range  
       db.getDb().each { device, points ->
          println "Processing device : ${device.id}"
          def networksViewedForDevice = getNetworksViewedForTimeRange(points, start, end)
+         // Increment the histogram for each of the networks viewed
          histogram.incrementNetworkCounts(networksViewedForDevice)
       }
       
-      def sortedHistogram = histogram.sortedByCount()
+      // Sort the histogram by view count
+      TreeMap sortedHistogram = histogram.sortedByCount()
       
       sortedHistogram.each { network, viewCount ->
          println "Views for ${network.name} : ${viewCount}"
@@ -32,6 +56,16 @@ class StbOptimizer
       return histogram
    }
    
+   /**
+    * Given a list of {@link StbDataPoint}s:
+    * <ul>
+    *    <li>First determine which points overlap with given time range.</li>
+    *    <li>Of the points that do, determine those with an overlap of >= 5min.</li>
+    *    <li>If there is, add that point's network value to a unique list of networks</li>
+    * </ul>
+    * @param points
+    * @return
+    */
    def getNetworksViewedForTimeRange(List<StbDataPoint> points, Date start, Date end)
    {
       final int secondsInFiveMinutes = 300
@@ -54,19 +88,21 @@ class StbOptimizer
          else
          {
             // At least part of the viewing is within the range. Calculate how much.
-            
             if (tuneIn.before(start))
             {
+               // If user tuned in before start time, we only care how much time elapsed
+               // between start time and when they tuned out.
                tuneIn = start
             }
             if (tuneOut.after(end))
             {
+               // Likewise if a user tunes out after the end time.
                tuneOut = end
             }
-            println "Viewing $tuneIn to $tuneOut partially in range. Network: ${points[i].network}"
-            println "tune in: ${tuneIn.getTime()}, tune out: ${tuneOut.getTime()}"
-            def secondsViewedInRange = (tuneOut.getTime() - tuneIn.getTime()) / 1e3
-            println "seconds: ${secondsViewedInRange}"
+            println "Viewing $tuneIn to $tuneOut partially in range."
+            println "Tune in: ${tuneIn.getTime()}, Tune out: ${tuneOut.getTime()}\t\tNetwork : ${points[i].network}"
+            int secondsViewedInRange = (tuneOut.getTime() - tuneIn.getTime()) / 1e3
+            println "Minutes elapsed: ${secondsViewedInRange / 60}"
             
             if (secondsViewedInRange >= secondsInFiveMinutes)
             {
@@ -80,17 +116,24 @@ class StbOptimizer
    
    static void main(String[] args)
    {
+      println "Beginning processing."
       String path = args[0]
       File stbData = new File(args[0])
       if (!stbData.exists()) throw new FileNotFoundException()
       
       StbOptimizer optimizer = new StbOptimizer()
       optimizer.initializeDatabase(stbData)
-      Date start = new SimpleDateFormat('yyyy-MM-dd HH:mm:ss').parse('2013-08-22 17:00:00')
-      Date end = new SimpleDateFormat('yyyy-MM-dd HH:mm:ss').parse('2013-08-22 19:00:00')
-      StbViewHistogram histogram = optimizer.optimizeForTimeRange(start, end)
+      
+      // Create the start and end times (in this example, 5pm and 7pm on 8/22/13)
+      String fivePM = '2013-08-22 17:00:00'
+      String sevenPM = '2013-08-22 19:00:00'
+      SimpleDateFormat format = new SimpleDateFormat('yyyy-MM-dd HH:mm:ss')  
+      Date start = format.parse(fivePM)
+      Date end = format.parse(sevenPM)
+      
+      // Build the histogram for the given time range, and pick out the top 5
+      StbViewHistogram histogram = optimizer.generateHistogramForTimeRange(start, end)
       List top5 = histogram.getTopFiveNetworks()
-      println top5
       
       // Output to csv file. Arbitrarily using current directory for this.
       String currentDir = System.getProperty('user.dir')
@@ -101,6 +144,5 @@ class StbOptimizer
       }
       println outputString
       output.write(outputString.toString())
-      
    }
 }
