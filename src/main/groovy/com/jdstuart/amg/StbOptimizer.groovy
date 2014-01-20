@@ -26,9 +26,9 @@ class StbOptimizer
    }
    
    /**
-    * Given a start and end time, calculates the number of verified
-    * "views" (>= 5 min viewing time) per network within the given 
-    * time range, by iterating through the {@link StbDatabase} and
+    * Given a start and end time, calculates the number of "views" 
+    * (>= 5 min viewing time) per network within the given time 
+    * range, by iterating through the {@link StbDatabase} and
     * calculating the number of unique views per device. 
     * 
     * @return A StbViewHistogram 
@@ -61,7 +61,7 @@ class StbOptimizer
     * <ul>
     *    <li>First determine which points overlap with given time range.</li>
     *    <li>Of the points that do, determine those with an overlap of >= 5min.</li>
-    *    <li>If there is, add that point's network value to a unique list of networks</li>
+    *    <li>If overlap is >= 5min, add that point's network value to a unique list of networks</li>
     * </ul>
     * @param points
     * @return
@@ -87,7 +87,6 @@ class StbOptimizer
          // Otherwise calculate the number of seconds viewed within specified range
          else
          {
-            println "Viewing $tuneIn to $tuneOut partially in range."
             // At least part of the viewing is within the range. Calculate how much.
             if (tuneIn.before(start))
             {
@@ -100,9 +99,7 @@ class StbOptimizer
                // Likewise if a user tunes out after the end time.
                tuneOut = end
             }
-            println "Tune in: ${tuneIn.getTime()}, Tune out: ${tuneOut.getTime()}\t\tNetwork : ${points[i].network}"
             int secondsViewedInRange = (tuneOut.getTime() - tuneIn.getTime()) / 1e3
-            println "Minutes elapsed: ${secondsViewedInRange / 60}"
             
             if (secondsViewedInRange >= secondsInFiveMinutes)
             {
@@ -110,7 +107,6 @@ class StbOptimizer
             }
          }
       }
-      println "Networks viewed : $networksViewed"
       return networksViewed 
    }
    

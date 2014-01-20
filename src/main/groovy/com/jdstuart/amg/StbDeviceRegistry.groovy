@@ -6,11 +6,7 @@ class StbDeviceRegistry
    
    static StbDevice getDeviceForId(String id)
    {
-      if (!registry[id])
-      {
-         registry[id] = new StbDevice(id)
-      }
-      return registry[id]
+      return registry[id] ?: (registry[id] = new StbDevice(id))
    }
    
    static List<StbDevice> getDeviceList()
