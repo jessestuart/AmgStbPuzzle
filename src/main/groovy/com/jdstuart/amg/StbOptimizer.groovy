@@ -5,7 +5,12 @@ import java.util.Date;
 import java.util.List;
 
 /**
- * Main entry point for processing.
+ * Main entry point for processing. The StbOptimizer class:
+ * <ul>
+ *    <li>Initializes an {@link StbDatabase} of {@link StbDataPoint}s, sorted by date.</li>
+ *    <li>Given a start and end date, generates a histogram of networks viewed during that period.</li>
+ *    <li>Writes the top five most-viewed networks to file in CSV format.
+ * </ul>
  * 
  * @author jdstuart
  *
@@ -31,10 +36,16 @@ class StbOptimizer
     * range, by iterating through the {@link StbDatabase} and
     * calculating the number of unique views per device. 
     * 
+    * Note: requires that the StbDatabase be initialized first, by calling
+    * initializeDatabase().
+    * 
     * @return A StbViewHistogram 
     */
    StbViewHistogram generateHistogramForTimeRange(Date start, Date end)
    {
+      final int secondsInFiveMinutes = 300
+      final int secondsInFiveHours = 18000
+      
       StbViewHistogram histogram = new StbViewHistogram()
       
       // For each device in the database, get a unique list of networks viewed within time range
@@ -63,13 +74,11 @@ class StbOptimizer
     *    <li>Of the points that do, determine those with an overlap of >= 5min.</li>
     *    <li>If overlap is >= 5min, add that point's network value to a unique list of networks</li>
     * </ul>
-    * @param points
-    * @return
+    * @return List of networks viewed during time range.
     */
    List<StbNetwork> getNetworksViewedForTimeRange(List<StbDataPoint> points, Date start, Date end)
    {
-      final int secondsInFiveMinutes = 300
-      final int secondsInFiveHours = 18000
+      
       List<StbNetwork> networksViewed = []
       
       (0..points.size()-1).each { i ->
@@ -79,35 +88,52 @@ class StbOptimizer
          Date tuneIn = points[i].date
          Date tuneOut = points[i+1]?.date ?: end
          
-         // Check if set was turned off
-         if (((tuneOut.getTime() - tuneIn.getTime()) / 1e3) > secondsInFiveHours) return;
-         // Check if period tunes out before start, or tunes in after end (==> data not relevant)
-         if (tuneOut.before(start) || tuneIn.after(end)) return;
-         
-         // Otherwise calculate the number of seconds viewed within specified range
-         else
+         // If period constitutes a valid view, add network to the list. 
+         if (this.isViewForTimeRange(tuneIn, tuneOut, start, end))
          {
-            // At least part of the viewing is within the range. Calculate how much.
-            if (tuneIn.before(start))
-            {
-               // If user tuned in before start time, we only care how much time elapsed
-               // between start time and when they tuned out.
-               tuneIn = start
-            }
-            if (tuneOut.after(end))
-            {
-               // Likewise if a user tunes out after the end time.
-               tuneOut = end
-            }
-            int secondsViewedInRange = (tuneOut.getTime() - tuneIn.getTime()) / 1e3
-            
-            if (secondsViewedInRange >= secondsInFiveMinutes)
-            {
-               networksViewed << points[i].network
-            }
+            networksViewed << points[i].network
          }
       }
       return networksViewed 
+   }
+   
+   /**
+    * Returns true if tuneIn/tuneOut time range constitutes a valid view
+    * (i.e., >= 5min viewing time within the specified time range);
+    * else returns false.
+    */
+   boolean isViewForTimeRange(Date tuneIn, Date tuneOut, Date start, Date end)
+   {
+      final int secondsInFiveMinutes = 300
+      final int secondsInFiveHours = 18000
+      
+      // Check if set was turned off
+      if (((tuneOut.getTime() - tuneIn.getTime()) / 1e3) > secondsInFiveHours) return false;
+      // Check if period tunes out before start, or tunes in after end (==> data not relevant)
+      if (tuneOut.before(start) || tuneIn.after(end)) return false;
+      
+      // Otherwise calculate the number of seconds viewed within specified range
+      else
+      {
+         // At least part of the viewing is within the range. Calculate how much.
+         if (tuneIn.before(start))
+         {
+            // If user tuned in before start time, we only care how much time elapsed
+            // between start time and when they tuned out.
+            tuneIn = start
+         }
+         if (tuneOut.after(end))
+         {
+            // Likewise if a user tunes out after the end time.
+            tuneOut = end
+         }
+         int secondsViewedInRange = (tuneOut.getTime() - tuneIn.getTime()) / 1e3
+         
+         if (secondsViewedInRange >= secondsInFiveMinutes)
+         {
+            return true
+         }
+      }
    }
    
    static void main(String[] args)

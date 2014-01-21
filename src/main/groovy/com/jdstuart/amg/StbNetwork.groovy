@@ -1,5 +1,14 @@
 package com.jdstuart.amg
 
+/**
+ * Enum of network names, to ensure type safety.
+ * 
+ * (This could easily be converted into a NetworkRegistry type class 
+ *  if the number of networks were to be arbitrarily large.)
+ *  
+ * @author jdstuart
+ *
+ */
 enum StbNetwork
 {
    ABC('ABC'),

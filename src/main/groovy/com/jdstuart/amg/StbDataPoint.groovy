@@ -1,5 +1,15 @@
 package com.jdstuart.amg
 
+/**
+ * Wrapper object for mapping a STB viewing date to its corresponding
+ * network.
+ * 
+ * Implements {@link Comparable} to allow for sorting of a list of data points
+ * by date, so they can be iterated through chronologically. 
+ * 
+ * @author jdstuart
+ *
+ */
 class StbDataPoint implements Comparable<StbDataPoint>
 {
    StbNetwork network
