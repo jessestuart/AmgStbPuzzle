@@ -2,7 +2,6 @@ package com.jdstuart.amg
 
 import java.text.SimpleDateFormat
 import java.util.Date;
-import java.util.List;
 
 /**
  * Main entry point for processing. The StbOptimizer class:

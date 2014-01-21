@@ -1,0 +1,3 @@
+## AmgStbPuzzle
+- AmgStbPuzzle is an application that inputs a list of set top box data (device id, network name, and date) in CSV format, and outputs a list of the top five networks viewed during a specified viewing period (currently hard-coded to between 5pm and 7pm on 8/22/13), which is then output to file (also in CSV format).
+- To run, simply execute the command `make run input="/${complete-path-to-input.csv}"` from a bash terminal. This command requires that $GROOVY_HOME be set in the user's bash_profile.
