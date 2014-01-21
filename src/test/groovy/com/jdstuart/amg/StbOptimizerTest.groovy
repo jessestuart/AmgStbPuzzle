@@ -46,7 +46,11 @@ class StbOptimizerTest
       
       Date ti7 = format.parse('2013-08-22 12:15:00')
       Date to7 = format.parse('2013-08-22 17:30:00')
-      assertFalse optimizer.isViewForTimeRange(ti7, to7, start, end)
+      assertTrue optimizer.isViewForTimeRange(ti7, to7, start, end)
+      
+      Date ti8 = format.parse('2013-08-22 12:03:00')
+      Date to8 = format.parse('2013-08-22 17:15:00')
+      assertFalse optimizer.isViewForTimeRange(ti8, to8, start, end)
    }
 
 }

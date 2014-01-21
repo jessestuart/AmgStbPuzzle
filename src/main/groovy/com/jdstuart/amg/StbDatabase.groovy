@@ -34,6 +34,7 @@ class StbDatabase
          // Get raw strings from row, then convert into wrapper POJO's for type safety
          def row = line.split(',')
          String deviceId = row[0]
+         // Remove exclamation marks from string (i.e., E!)
          String networkString = row[1].replace('!', '')
          String dateString = row[2]
          
